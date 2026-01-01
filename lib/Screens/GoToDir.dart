@@ -16,14 +16,22 @@ class Gotodir extends StatefulWidget {
 class _GotodirState extends State<Gotodir> {
   List<FileSystemEntity> entity = [];
 
-  @override
-  void didChangeDependencies() async {
-    // TODO: implement didChangeDependencies
-    super.didChangeDependencies();
-    entity = await Provider.of<Dirmanager>(
+  void initwithtimer() async {
+    final data = await Provider.of<Dirmanager>(
       context,
       listen: false,
     ).GetDirectories(widget.Destination);
+
+    setState(() {
+      entity = data;
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initwithtimer();
   }
 
   @override
@@ -48,7 +56,7 @@ class _GotodirState extends State<Gotodir> {
                 return GestureDetector(
                   onTap: () {
                     Directory newDir = Directory(
-                      '${widget.Destination.path}${names[index]}',
+                      '${widget.Destination.path}/${names[index]}',
                     );
                     print(newDir.path);
                     Navigator.push(
@@ -60,7 +68,6 @@ class _GotodirState extends State<Gotodir> {
                   },
                   child: Directories(name: names[index]),
                 );
-                ;
               },
             ),
           ),

@@ -15,17 +15,24 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   List<FileSystemEntity> entity = [];
-  Directory Home_dir = Directory('/home/darkness');
+  Directory Home_dir = Directory('/home/darkness/');
 
-  @override
-  void didChangeDependencies() async {
-    // TODO: implement didChangeDependencies
-    super.didChangeDependencies();
-
-    entity = await Provider.of<Dirmanager>(
+  void initwithtimer() async {
+    final data = await Provider.of<Dirmanager>(
       context,
       listen: false,
     ).GetDirectories(Home_dir);
+
+    setState(() {
+      entity = data;
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initwithtimer();
   }
 
   @override
@@ -54,7 +61,7 @@ class _DashboardState extends State<Dashboard> {
                 return GestureDetector(
                   onTap: () {
                     Directory newDir = Directory(
-                      '${Home_dir.path}/${nonDot[index]}',
+                      '${Home_dir.path}${nonDot[index]}',
                     );
                     print(newDir.path);
                     Navigator.push(
