@@ -16,22 +16,22 @@ class Gotodir extends StatefulWidget {
 class _GotodirState extends State<Gotodir> {
   List<FileSystemEntity> entity = [];
 
-  void initwithtimer() async {
-    final data = await Provider.of<Dirmanager>(
-      context,
-      listen: false,
-    ).GetDirectories(widget.Destination);
+  // void initwithtimer() async {
+  //   final data = await Provider.of<Dirmanager>(
+  //     context,
+  //     listen: false,
+  //   ).GetDirectories(widget.Destination);
 
-    setState(() {
-      entity = data;
-    });
-  }
+  //   setState(() {
+  //     entity = data;
+  //   });
+  // }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    initwithtimer();
+    // initwithtimer();
   }
 
   @override

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 class Dirmanager extends ChangeNotifier {
-  
+  List<FileSystemEntity> Home_D_Entities = [];
+
   // Get list of directories in a given path
-  Future<List<FileSystemEntity>> GetDirectories(Directory Home_dir) async {
-    if (await Home_dir.existsSync()) {
-      return Home_dir.listSync(followLinks: false);
+  List<FileSystemEntity> Get_Home_D_Entities(Directory Home_dir) {
+    if (Home_dir.existsSync()) {
+      Home_D_Entities = (Home_dir.listSync(followLinks: false));
+      print(Home_D_Entities);
     }
     return [];
   }

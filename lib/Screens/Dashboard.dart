@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:disklens/Provider/DirManager.dart';
 import 'package:disklens/Screens/GoToDir.dart';
 import 'package:disklens/Widgets/Directories.dart';
@@ -14,18 +13,17 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  List<FileSystemEntity> entity = [];
-  Directory Home_dir = Directory('/home/darkness/');
+  //Directory Home_dir = Directory('/home/darkness/');
+  final home = Platform.environment['HOME'];
+  late Directory homeDir = Directory(home!);
+  List<String> Non_Hidden_Entities = [];
+  List<String> Entity_Names = [];
 
   void initwithtimer() async {
-    final data = await Provider.of<Dirmanager>(
+    Provider.of<Dirmanager>(
       context,
       listen: false,
-    ).GetDirectories(Home_dir);
-
-    setState(() {
-      entity = data;
-    });
+    ).Get_Home_D_Entities(homeDir);
   }
 
   @override
@@ -33,12 +31,20 @@ class _DashboardState extends State<Dashboard> {
     // TODO: implement initState
     super.initState();
     initwithtimer();
+    print(home);
+    print(homeDir);
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<Dirmanager>(
       builder: (BuildContext context, Dirmanager, Widget? child) {
+        Entity_Names = Dirmanager.TrimPath(Dirmanager.Home_D_Entities);
+        for (var name in Entity_Names) {
+          if (!name.startsWith('.')) {
+            Non_Hidden_Entities.add(name);
+          }
+        }
         return Scaffold(
           body: Padding(
             padding: EdgeInsets.all(8.0),
@@ -46,22 +52,13 @@ class _DashboardState extends State<Dashboard> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
               ),
-              itemCount:
-                  18, // change it to dynamic now we only have the non dot starters
+              itemCount: Non_Hidden_Entities
+                  .length, // change it to dynamic now we only have the non dot starters
               itemBuilder: (BuildContext context, int index) {
-                List<String> nonDot = [];
-                List<String> names = [];
-                names = Dirmanager.TrimPath(entity);
-                for (var name in names) {
-                  if (!name.startsWith('.')) {
-                    nonDot.add(name);
-                  }
-                }
-
                 return GestureDetector(
                   onTap: () {
                     Directory newDir = Directory(
-                      '${Home_dir.path}${nonDot[index]}',
+                      '${homeDir.path}${Non_Hidden_Entities[index]}',
                     );
                     print(newDir.path);
                     Navigator.push(
@@ -71,7 +68,7 @@ class _DashboardState extends State<Dashboard> {
                       ),
                     );
                   },
-                  child: Directories(name: nonDot[index]),
+                  child: Directories(name: Non_Hidden_Entities[index]),
                 );
               },
             ),
