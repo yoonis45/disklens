@@ -45,12 +45,63 @@ class _DirmState extends State<Dirm> {
               Expanded(
                 flex: 1,
                 child: Container(
-                  color: Colors.cyanAccent,
-                  child: Column(
-                    children: [
-                      SizedBox(height: 10),
-                      Text("DISKLENS", style: TextStyle(color: Colors.black)),
-                    ],
+                  color: Colors.black12,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("DISKLENS", style: TextStyle(color: Colors.white)),
+                        SizedBox(height: 20),
+                        Text(
+                          "Quick Access",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          label: Text("Favorites"),
+                          icon: Icon(Icons.star_border),
+                        ),
+                        SizedBox(height: 20),
+
+                        Text("System", style: TextStyle(color: Colors.grey)),
+                        SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          style: ButtonStyle(),
+                          onPressed: () {},
+                          label: Text("Home"),
+                          icon: Icon(Icons.home),
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          label: Text("Downloads"),
+                          icon: Icon(Icons.file_download_outlined),
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          label: Text("Document"),
+                          icon: Icon(Icons.feed_outlined),
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          label: Text("Pictures"),
+                          icon: Icon(Icons.image_outlined),
+                        ),
+                        SizedBox(height: 20),
+                        Text("External", style: TextStyle(color: Colors.grey)),
+                        SizedBox(height: 10),
+                        Divider(color: Colors.white),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          label: Text("Trash"),
+                          icon: Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -84,19 +135,22 @@ class _DirmState extends State<Dirm> {
                             onPressed: () {
                               setState(() {
                                 Is_Grid = !Is_Grid;
-                                print(Is_Grid);
                               });
                             },
                             icon: Icon(
                               Is_Grid ? Icons.grid_view : Icons.view_list,
                             ),
                           ),
+                          IconButton(
+                            onPressed: () {},
+                            icon: Icon(Icons.keyboard_arrow_down),
+                          ),
                         ],
                       ),
                     ),
                     Flexible(
                       child: Container(
-                        color: Colors.deepOrange,
+                        color: const Color.fromARGB(31, 32, 30, 30),
                         child: Is_Grid
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),

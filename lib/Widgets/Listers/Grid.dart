@@ -31,21 +31,23 @@ class _GridState extends State<Grid> {
           itemCount: entries
               .length, // change it to dynamic now we only have the non dot starters
           itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              onTap: () {
-                Dirmanager.navigate_to(entries[index].value);
-                // Directory newDir = Directory(
-                //   '${entries[index].value}${Trimed_Entities[index]}',
-                // );
-                // print(newDir.path);
-                print(
-                  "Trimed ${entries[index].key} the path: ${entries[index].value} Type of path: ${entries[index].value.runtimeType}",
-                );
-                Dirmanager.parent = entries[index].value;
-              },
-              child: Directories(
-                name: entries[index].key,
-                Entrylink: entries[index].value,
+            return ListTile(
+              title: GestureDetector(
+                onTap: () {
+                  Dirmanager.navigate_to(entries[index].value);
+                  // Directory newDir = Directory(
+                  //   '${entries[index].value}${Trimed_Entities[index]}',
+                  // );
+                  // print(newDir.path);
+                  print(
+                    "Trimed ${entries[index].key} the path: ${entries[index].value} Type of path: ${entries[index].value.runtimeType}",
+                  );
+                  Dirmanager.parent = entries[index].value;
+                },
+                child: Directories(
+                  name: entries[index].key,
+                  Entrylink: entries[index].value,
+                ),
               ),
             );
           },
