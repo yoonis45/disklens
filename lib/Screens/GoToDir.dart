@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:disklens/Provider/DirManager.dart';
-import 'package:disklens/Widgets/Directories.dart';
+import 'package:disklens/Widgets/Diffrentiaters/Directories.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -49,7 +49,7 @@ class _GotodirState extends State<Gotodir> {
               itemCount: entity
                   .length, // change it to dynamic now we only have the non dot starters
               itemBuilder: (BuildContext context, int index) {
-                List<String> names = [];
+                Map names = {};
                 names = value.TrimPath(entity);
                 print(names);
 
@@ -66,7 +66,7 @@ class _GotodirState extends State<Gotodir> {
                       ),
                     );
                   },
-                  child: Directories(name: names[index]),
+                  child: Directories(name: names[index],  Entrylink: index,),
                 );
               },
             ),

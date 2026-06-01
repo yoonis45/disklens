@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class Directories extends StatefulWidget {
+class File extends StatefulWidget {
   final String name;
-  const Directories({super.key, required this.name});
+  const File({super.key, required this.name});
 
   @override
-  State<Directories> createState() => _DirectoriesState();
+  State<File> createState() => _FileState();
 }
 
-class _DirectoriesState extends State<Directories> {
+class _FileState extends State<File> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -16,7 +16,7 @@ class _DirectoriesState extends State<Directories> {
         padding: EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Flexible(child: Container(color: Colors.blue)),
+            Flexible(child: Container(color: Colors.orange)),
             Text(widget.name),
           ],
         ),

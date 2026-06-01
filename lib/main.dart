@@ -1,5 +1,6 @@
 import 'package:disklens/Provider/DirManager.dart';
 import 'package:disklens/Screens/Dashboard.dart';
+import 'package:disklens/Screens/DirM.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,11 +20,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: Dashboard(),
+      theme: ThemeData.dark(),
+      home: Dirm(),//Dirm(),
     );
   }
 }
