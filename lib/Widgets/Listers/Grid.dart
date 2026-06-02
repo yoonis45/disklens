@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:disklens/Provider/DirManager.dart';
-import 'package:disklens/Service/Service.dart';
-import 'package:disklens/Widgets/Diffrentiaters/Directories.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

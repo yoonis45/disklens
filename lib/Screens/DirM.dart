@@ -6,7 +6,6 @@ import 'package:disklens/Service/Service.dart';
 import 'package:disklens/Widgets/Listers/Grid.dart';
 import 'package:disklens/Widgets/Listers/List.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class Dirm extends StatefulWidget {
