@@ -24,7 +24,6 @@ class _DirmState extends State<Dirm> {
   late Directory Pictures = Directory("${home!}/Pictures");
   final service srv = service();
   late final TextEditingController tcon;
-  bool Is_Grid = true;
   final sidebarButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: Colors.transparent,
     shadowColor: Colors.transparent,
@@ -186,7 +185,7 @@ class _DirmState extends State<Dirm> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 160),
+                        SizedBox(height: 150),
                         Divider(),
                         SizedBox(
                           width: double.infinity,
@@ -209,38 +208,63 @@ class _DirmState extends State<Dirm> {
                 ),
               ),
               Expanded(
-                flex: 3,
+                flex: 5,
                 child: Column(
                   children: [
                     SizedBox(
                       child: Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(15),
                         child: Row(
+                          spacing: 3,
                           children: [
                             IconButton(
                               onPressed: () {
-                                Dirmanager.navigate_to(
-                                  Dirmanager.parent.parent,
-                                );
-                                Dirmanager.parent = Dirmanager.parent;
+                                if (Dirmanager.parent.parent.path ==
+                                    homeDir.path) {
+                                  setState(() {
+                                    Dirmanager.parent = homeDir;
+                                    Dirmanager.navigate_to(homeDir);
+                                  });
+                                } else {
+                                  Dirmanager.navigate_to(
+                                    Dirmanager.parent.parent,
+                                  );
+                                }
                               },
-                              icon: Icon(Icons.arrow_back),
+                              icon: Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                             Dirmanager.selected_path.toString().isEmpty
                                 ? IconButton(
                                     onPressed: () {},
                                     icon: Icon(
+                                      size: 20,
                                       Icons.arrow_forward,
                                       color: Colors.grey,
                                     ),
                                   )
                                 : IconButton(
                                     onPressed: () {
-                                      Dirmanager.navigate_to(
-                                        Dirmanager.selected_path,
-                                      );
+                                      if (Dirmanager.selected_path.path ==
+                                          homeDir.path) {
+                                        setState(() {
+                                          Dirmanager.parent = homeDir;
+                                          Dirmanager.navigate_to(homeDir);
+                                        });
+                                      } else {
+                                        Dirmanager.navigate_to(
+                                          Dirmanager.selected_path,
+                                        );
+                                      }
                                     },
-                                    icon: Icon(Icons.arrow_forward),
+                                    icon: Icon(
+                                      size: 20,
+                                      Icons.arrow_forward,
+                                      color: Colors.white,
+                                    ),
                                   ),
                             SizedBox(height: 10),
                             Flexible(
@@ -257,13 +281,21 @@ class _DirmState extends State<Dirm> {
                                 Dirmanager.toggle();
                               },
                               icon: Icon(
-                                Is_Grid ? Icons.grid_view : Icons.view_list,
+                                size: 20,
+                                color: Colors.white,
+                                Dirmanager.Is_Grid
+                                    ? Icons.grid_view
+                                    : Icons.view_list,
                               ),
                             ),
                             MenuAnchor(
                               builder: (context, controller, child) {
                                 return IconButton(
-                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                  icon: const Icon(
+                                    size: 20,
+                                    Icons.keyboard_arrow_down,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: () {
                                     controller.isOpen
                                         ? controller.close()
@@ -287,17 +319,9 @@ class _DirmState extends State<Dirm> {
                         color: const Color.fromARGB(31, 32, 30, 30),
                         child: Dirmanager.parent == homeDir
                             ? Dashboard()
-                            : (Is_Grid
-                                  ? Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Grid(
-                                        Entities: Dirmanager.Entities,
-                                      ),
-                                    )
-                                  : Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: lis(Entities: Dirmanager.Entities),
-                                    )),
+                            : (Dirmanager.Is_Grid
+                                  ? Grid(Entities: Dirmanager.Entities)
+                                  : lis(Entities: Dirmanager.Entities)),
                       ),
                     ),
                   ],

@@ -19,13 +19,12 @@ class _StorageOverviewSizeState extends State<StorageOverviewSize> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
       decoration: BoxDecoration(
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(5),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           spacing: 10,
@@ -33,7 +32,7 @@ class _StorageOverviewSizeState extends State<StorageOverviewSize> {
             VerticalDivider(
               color: widget.colour,
               thickness: 5,
-              width: 20,
+
               radius: BorderRadius.circular(10),
             ),
             Column(
@@ -42,7 +41,7 @@ class _StorageOverviewSizeState extends State<StorageOverviewSize> {
                 Text(widget.type, style: TextStyle(color: Colors.grey)),
                 Text(
                   "${widget.size.toString()}GB",
-                  style: TextStyle(fontSize: 22),
+                  style: TextStyle(fontSize: 19),
                 ),
               ],
             ),

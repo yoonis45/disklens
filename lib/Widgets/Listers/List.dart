@@ -49,6 +49,9 @@ class _lisState extends State<lis> {
                 hoverColor: const Color.fromARGB(255, 70, 69, 69),
 
                 child: ListTile(
+                  tileColor: selectedPath == entries[index].value
+                      ? Colors.grey[800]
+                      : Colors.transparent,
                   selected: selectedPath == entries[index].value.path,
                   leading: entries[index].value is Directory
                       ? Icon(Icons.folder, color: Colors.blue)

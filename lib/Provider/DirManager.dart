@@ -2,15 +2,27 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 class Dirmanager extends ChangeNotifier {
+  final home = Platform.environment['HOME'];
+  late Directory homeDir = Directory(home!);
+  late Directory Downloads = Directory("${home!}/Downloads");
+  late Directory Documents = Directory("${home!}/Documents");
+  late Directory Pictures = Directory("${home!}/Pictures");
   Directory parent = Directory("");
   List<FileSystemEntity> Entities = [];
   List<FileSystemEntity> Home_D_Entities = [];
   Directory Current_path = Directory("");
-  dynamic selected_path = '';
+  Directory selected_path = Directory("");
   bool Is_Grid = true;
 
   void toggle() {
     Is_Grid = !Is_Grid;
+    notifyListeners();
+  }
+
+  void Go_To_Dashboard() {
+    parent = homeDir;
+    print(parent);
+    Entities = homeDir.listSync(followLinks: false);
     notifyListeners();
   }
 
