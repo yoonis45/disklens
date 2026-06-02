@@ -31,22 +31,45 @@ class _GridState extends State<Grid> {
           itemCount: entries
               .length, // change it to dynamic now we only have the non dot starters
           itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              title: GestureDetector(
+            dynamic selectedPath;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
                 onTap: () {
+                  setState(() {
+                    selectedPath = entries[index].value;
+                    print(selectedPath);
+                    Dirmanager.update_selected_path(selectedPath);
+                  });
+                },
+                onDoubleTap: () {
                   Dirmanager.navigate_to(entries[index].value);
-                  // Directory newDir = Directory(
-                  //   '${entries[index].value}${Trimed_Entities[index]}',
-                  // );
-                  // print(newDir.path);
+
                   print(
                     "Trimed ${entries[index].key} the path: ${entries[index].value} Type of path: ${entries[index].value.runtimeType}",
                   );
+
                   Dirmanager.parent = entries[index].value;
                 },
-                child: Directories(
-                  name: entries[index].key,
-                  Entrylink: entries[index].value,
+                splashColor: Colors.grey[10],
+                hoverColor: const Color.fromARGB(255, 70, 69, 69),
+                // entries[index].value is Directory
+                //                       ? Icon(Icons.folder, color: Colors.blue)
+                //                       : Icon(Icons.feed_outlined, color: Colors.grey),
+                //Text(entries[index].key),
+                child: Container(
+                  child: Column(
+                    children: [
+                      if (entries[index].value is Directory)
+                        Expanded(child: Icon(Icons.folder, color: Colors.blue))
+                      else
+                        Expanded(
+                          child: Icon(Icons.feed_outlined, color: Colors.grey),
+                        ),
+
+                      Text(entries[index].key),
+                    ],
+                  ),
                 ),
               ),
             );

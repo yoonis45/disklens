@@ -5,12 +5,25 @@ class Dirmanager extends ChangeNotifier {
   Directory parent = Directory("");
   List<FileSystemEntity> Entities = [];
   List<FileSystemEntity> Home_D_Entities = [];
-  var Home_dir_path = '';
+  Directory Current_path = Directory("");
+  dynamic selected_path = '';
+  bool Is_Grid = true;
+
+  void toggle() {
+    Is_Grid = !Is_Grid;
+    notifyListeners();
+  }
+
+  void update_selected_path(dynamic path) {
+    selected_path = path;
+    notifyListeners();
+  }
 
   // Get list of directories in a given path
   void Get_Home_D_Entities(Directory Home_dir) {
     if (Home_dir.existsSync()) {
       Home_D_Entities = Home_dir.listSync(followLinks: false);
+      Current_path = Home_dir;
       parent = Home_dir;
       Entities = Home_D_Entities;
     }
@@ -22,6 +35,7 @@ class Dirmanager extends ChangeNotifier {
     if (Dir_Path.existsSync()) {
       Nav_Entities = Dir_Path.listSync(followLinks: false);
       Entities.clear();
+      parent = Dir_Path;
       Entities = Nav_Entities;
       notifyListeners();
     }

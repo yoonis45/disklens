@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:disklens/Provider/DirManager.dart';
+import 'package:disklens/Screens/Dashboard.dart';
 import 'package:disklens/Service/Service.dart';
 import 'package:disklens/Widgets/Listers/Grid.dart';
 import 'package:disklens/Widgets/Listers/List.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class Dirm extends StatefulWidget {
@@ -17,15 +19,28 @@ class Dirm extends StatefulWidget {
 class _DirmState extends State<Dirm> {
   final home = Platform.environment['HOME'];
   late Directory homeDir = Directory(home!);
+  late Directory Downloads = Directory("${home!}/Downloads");
+  late Directory Documents = Directory("${home!}/Documents");
+  late Directory Pictures = Directory("${home!}/Pictures");
   final service srv = service();
   late final TextEditingController tcon;
   bool Is_Grid = true;
+  final sidebarButtonStyle = ElevatedButton.styleFrom(
+    backgroundColor: Colors.transparent,
+    shadowColor: Colors.transparent,
+    elevation: 0,
+    alignment: Alignment.centerLeft,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  );
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     tcon = TextEditingController();
     srv.initwithtimer(homeDir, context);
+    srv.check_system_panel(Downloads);
+    srv.check_system_panel(Documents);
+    srv.check_system_panel(Pictures);
   }
 
   @override
@@ -47,58 +62,146 @@ class _DirmState extends State<Dirm> {
                 child: Container(
                   color: Colors.black12,
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("DISKLENS", style: TextStyle(color: Colors.white)),
-                        SizedBox(height: 20),
+                        Text(
+                          "D I S K L E N S",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(height: 50),
                         Text(
                           "Quick Access",
                           style: TextStyle(color: Colors.grey),
                         ),
                         SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: () {},
-                          label: Text("Favorites"),
-                          icon: Icon(Icons.star_border),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {},
+                            icon: const Icon(
+                              Icons.star_border,
+                              color: Colors.yellow,
+                            ),
+                            label: const Text(
+                              "Favorites",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
                         SizedBox(height: 20),
-
                         Text("System", style: TextStyle(color: Colors.grey)),
+
                         SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          style: ButtonStyle(),
-                          onPressed: () {},
-                          label: Text("Home"),
-                          icon: Icon(Icons.home),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {
+                              Dirmanager.navigate_to(homeDir);
+                            },
+                            icon: const Icon(Icons.home, color: Colors.blue),
+                            label: const Text(
+                              "Home",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
+
                         SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: () {},
-                          label: Text("Downloads"),
-                          icon: Icon(Icons.file_download_outlined),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {
+                              Dirmanager.navigate_to(Downloads);
+                            },
+                            icon: const Icon(
+                              Icons.file_download_outlined,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Downloads",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
+
                         SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: () {},
-                          label: Text("Document"),
-                          icon: Icon(Icons.feed_outlined),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {
+                              Dirmanager.navigate_to(Documents);
+                            },
+                            icon: const Icon(
+                              Icons.feed_outlined,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Document",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
+
                         SizedBox(height: 10),
-                        ElevatedButton.icon(
-                          onPressed: () {},
-                          label: Text("Pictures"),
-                          icon: Icon(Icons.image_outlined),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {
+                              Dirmanager.navigate_to(Pictures);
+                            },
+                            icon: const Icon(
+                              Icons.image_outlined,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "Pictures",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
+
                         SizedBox(height: 20),
                         Text("External", style: TextStyle(color: Colors.grey)),
                         SizedBox(height: 10),
-                        Divider(color: Colors.white),
-                        ElevatedButton.icon(
-                          onPressed: () {},
-                          label: Text("Trash"),
-                          icon: Icon(Icons.delete_outline),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {},
+                            icon: const Icon(Icons.usb, color: Colors.green),
+                            label: const Text(
+                              "Extarnal Drive",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 160),
+                        Divider(),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: sidebarButtonStyle,
+                            onPressed: () {},
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            label: const Text(
+                              "Trash",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -110,56 +213,91 @@ class _DirmState extends State<Dirm> {
                 child: Column(
                   children: [
                     SizedBox(
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Dirmanager.navigate_to(Dirmanager.parent.parent);
-                              Dirmanager.parent = Dirmanager.parent.parent;
-                            },
-                            icon: Icon(Icons.arrow_back),
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.arrow_forward),
-                          ),
-                          Flexible(
-                            child: TextFormField(
-                              controller: tcon,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Dirmanager.navigate_to(
+                                  Dirmanager.parent.parent,
+                                );
+                                Dirmanager.parent = Dirmanager.parent;
+                              },
+                              icon: Icon(Icons.arrow_back),
+                            ),
+                            Dirmanager.selected_path.toString().isEmpty
+                                ? IconButton(
+                                    onPressed: () {},
+                                    icon: Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.grey,
+                                    ),
+                                  )
+                                : IconButton(
+                                    onPressed: () {
+                                      Dirmanager.navigate_to(
+                                        Dirmanager.selected_path,
+                                      );
+                                    },
+                                    icon: Icon(Icons.arrow_forward),
+                                  ),
+                            SizedBox(height: 10),
+                            Flexible(
+                              child: TextFormField(
+                                controller: tcon,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                Is_Grid = !Is_Grid;
-                              });
-                            },
-                            icon: Icon(
-                              Is_Grid ? Icons.grid_view : Icons.view_list,
+                            SizedBox(height: 10),
+                            IconButton(
+                              onPressed: () {
+                                Dirmanager.toggle();
+                              },
+                              icon: Icon(
+                                Is_Grid ? Icons.grid_view : Icons.view_list,
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.keyboard_arrow_down),
-                          ),
-                        ],
+                            MenuAnchor(
+                              builder: (context, controller, child) {
+                                return IconButton(
+                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                  onPressed: () {
+                                    controller.isOpen
+                                        ? controller.close()
+                                        : controller.open();
+                                  },
+                                );
+                              },
+                              menuChildren: [
+                                MenuItemButton(
+                                  child: const Text('Option 1'),
+                                  onPressed: () {},
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     Flexible(
                       child: Container(
                         color: const Color.fromARGB(31, 32, 30, 30),
-                        child: Is_Grid
-                            ? Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Grid(Entities: Dirmanager.Entities),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: lis(Entities: Dirmanager.Entities),
-                              ),
+                        child: Dirmanager.parent == homeDir
+                            ? Dashboard()
+                            : (Is_Grid
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Grid(
+                                        Entities: Dirmanager.Entities,
+                                      ),
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: lis(Entities: Dirmanager.Entities),
+                                    )),
                       ),
                     ),
                   ],

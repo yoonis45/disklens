@@ -25,9 +25,18 @@ class _lisState extends State<lis> {
         return ListView.builder(
           itemCount: entries.length,
           itemBuilder: (BuildContext context, int index) {
-            return ListTile(
-              title: GestureDetector(
+            dynamic selectedPath;
+            return Material(
+              //color: Colors.transparent,
+              child: InkWell(
                 onTap: () {
+                  setState(() {
+                    selectedPath = entries[index].value;
+                    print(selectedPath);
+                    Dirmanager.update_selected_path(selectedPath);
+                  });
+                },
+                onDoubleTap: () {
                   Dirmanager.navigate_to(entries[index].value);
 
                   print(
@@ -36,9 +45,16 @@ class _lisState extends State<lis> {
 
                   Dirmanager.parent = entries[index].value;
                 },
-                child: Directories(
-                  name: entries[index].key,
-                  Entrylink: entries[index].value,
+                splashColor: Colors.grey[10],
+                hoverColor: const Color.fromARGB(255, 70, 69, 69),
+
+                child: ListTile(
+                  selected: selectedPath == entries[index].value.path,
+                  leading: entries[index].value is Directory
+                      ? Icon(Icons.folder, color: Colors.blue)
+                      : Icon(Icons.feed_outlined, color: Colors.grey),
+                  title: Text(entries[index].key),
+                  trailing: Text(entries[index].value.toString()),
                 ),
               ),
             );
