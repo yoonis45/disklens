@@ -24,21 +24,29 @@ class _DirmState extends State<Dirm> {
   final service srv = service();
   late final TextEditingController tcon;
   final sidebarButtonStyle = ElevatedButton.styleFrom(
+    foregroundColor: Color(0xFF2B2C2E),
     backgroundColor: Colors.transparent,
     shadowColor: Colors.transparent,
     elevation: 0,
     alignment: Alignment.centerLeft,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
   );
+  String selectedRadio = 'name';
+  // bool showHiddenFiles = false;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+
     tcon = TextEditingController();
+
     srv.initwithtimer(homeDir, context);
     srv.check_system_panel(Downloads);
     srv.check_system_panel(Documents);
     srv.check_system_panel(Pictures);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      srv.showHidden_Files(context);
+    });
   }
 
   @override
@@ -53,12 +61,13 @@ class _DirmState extends State<Dirm> {
       builder: (context, Dirmanager, child) {
         tcon.text = Dirmanager.parent.path;
         return Scaffold(
+          backgroundColor: Color(0xFF0B0C0D),
           body: Row(
             children: [
               Expanded(
                 flex: 1,
                 child: Container(
-                  color: Colors.black12,
+                  color: Color(0xFF121214),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -184,7 +193,8 @@ class _DirmState extends State<Dirm> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 150),
+                        //SizedBox(height: 150),
+                        Spacer(),
                         Divider(),
                         SizedBox(
                           width: double.infinity,
@@ -303,8 +313,51 @@ class _DirmState extends State<Dirm> {
                                 );
                               },
                               menuChildren: [
+                                RadioMenuButton<String>(
+                                  value: 'name',
+                                  groupValue: selectedRadio,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRadio = value!;
+                                      Dirmanager.Entities.sort((a, b) {
+                                        return a.path.compareTo(b.path);
+                                      });
+                                    });
+                                  },
+                                  child: const Text('Sort by Name'),
+                                ),
+
+                                RadioMenuButton<String>(
+                                  value: 'Type',
+                                  groupValue: selectedRadio,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedRadio = value!;
+                                      Dirmanager.Entities.sort((a, b) {
+                                        if (a is Directory && b is File)
+                                          return -1;
+                                        if (a is File && b is Directory)
+                                          return 1;
+
+                                        return 0;
+                                      });
+                                    });
+                                  },
+                                  child: const Text('Sort by Type'),
+                                ),
+
+                                CheckboxMenuButton(
+                                  value: Dirmanager.showHidden,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      Dirmanager.showHidden = value!;
+                                      Dirmanager.showHiddenFiles(value!);
+                                    });
+                                  },
+                                  child: const Text('Show Hidden Files'),
+                                ),
                                 MenuItemButton(
-                                  child: const Text('Option 1'),
+                                  child: const Text('Captions'),
                                   onPressed: () {},
                                 ),
                               ],

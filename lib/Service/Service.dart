@@ -22,4 +22,8 @@ class service {
       print("they dont ");
     }
   }
+
+  void showHidden_Files(context) async {
+    Provider.of<Dirmanager>(context, listen: false).showHiddenFiles(false);
+  }
 }

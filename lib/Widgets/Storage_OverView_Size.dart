@@ -20,7 +20,7 @@ class _StorageOverviewSizeState extends State<StorageOverviewSize> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[850],
+        color: Color(0xFF1F2022),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(

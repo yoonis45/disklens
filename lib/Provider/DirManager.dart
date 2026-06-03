@@ -8,14 +8,41 @@ class Dirmanager extends ChangeNotifier {
   late Directory Documents = Directory("${home!}/Documents");
   late Directory Pictures = Directory("${home!}/Pictures");
   Directory parent = Directory("");
+  List<FileSystemEntity> AllEntities = [];
+  List<FileSystemEntity> NonHiddenEntities = [];
   List<FileSystemEntity> Entities = [];
   List<FileSystemEntity> Home_D_Entities = [];
   Directory Current_path = Directory("");
   Directory selected_path = Directory("");
   bool Is_Grid = true;
+  bool showHidden = false;
+
+  // void showHiddenFiles(bool value) {
+  //   showHidden = value;
+
+  //   if (showHidden) {
+  //     Entities = List<FileSystemEntity>.from(AllEntities);
+  //   } else {
+  //     Entities = List<FileSystemEntity>.from(NonHiddenEntities);
+  //   }
+
+  //   notifyListeners();
+  // }
+  void showHiddenFiles(bool value) {
+    showHidden = value;
+    AllEntities = parent.listSync(followLinks: false);
+    Entities = showHidden
+        ? List<FileSystemEntity>.from(AllEntities)
+        : AllEntities.where((entity) {
+            return !entity.path.split('/').last.startsWith('.');
+          }).toList();
+
+    notifyListeners();
+  }
 
   void toggle() {
     Is_Grid = !Is_Grid;
+
     notifyListeners();
   }
 

@@ -32,6 +32,7 @@ class _DashboardState extends State<Dashboard> {
         final total = 450;
 
         return Scaffold(
+          backgroundColor: Color(0xFF0B0C0D),
           body: Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -39,11 +40,10 @@ class _DashboardState extends State<Dashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Flexible(
-                  flex: 1,
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      color: Colors.grey[900],
+                      color: Color(0xFF171719),
                     ),
 
                     child: Padding(
