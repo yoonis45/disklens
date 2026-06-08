@@ -1,5 +1,6 @@
 import 'package:disklens/Provider/DirManager.dart';
 import 'package:disklens/Screens/DirM.dart';
+import 'package:disklens/Theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,14 +16,15 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData.dark(),
-      home: Dirm(), //Dirm(),
+      title: 'Disklens',
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: AppTheme.background,
+      ),
+      home: const Dirm(),
     );
   }
 }

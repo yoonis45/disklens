@@ -1,23 +1,31 @@
 import 'dart:io';
 
 import 'package:disklens/Provider/DirManager.dart';
+import 'package:disklens/Service/FileOperations.dart';
+import 'package:disklens/Theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class Rename extends StatefulWidget {
-  final Directory path;
-  final name;
-  const Rename({super.key, required this.path, required this.name});
+  final FileSystemEntity entity;
+  final String name;
+
+  const Rename({super.key, required this.entity, required this.name});
 
   @override
   State<Rename> createState() => _RenameState();
 }
 
 class _RenameState extends State<Rename> {
-  final TextEditingController controller = TextEditingController();
-
+  late final TextEditingController controller;
   String? errorText;
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController(text: widget.name);
+  }
 
   @override
   void dispose() {
@@ -25,28 +33,21 @@ class _RenameState extends State<Rename> {
     super.dispose();
   }
 
-  Future<void> createFolder() async {
+  bool _isValidName(String name) {
+    const invalid = ['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
+    return !invalid.any(name.contains);
+  }
+
+  Future<void> submit() async {
     final name = controller.text.trim();
 
     if (name.isEmpty) {
-      setState(() {
-        errorText = "Folder name cannot be empty";
-      });
+      setState(() => errorText = 'Name cannot be empty');
       return;
     }
 
-    if (name.contains("/") ||
-        name.contains("\\") ||
-        name.contains(":") ||
-        name.contains("*") ||
-        name.contains("?") ||
-        name.contains('"') ||
-        name.contains("<") ||
-        name.contains(">") ||
-        name.contains("|")) {
-      setState(() {
-        errorText = "Folder name contains invalid characters";
-      });
+    if (!_isValidName(name)) {
+      setState(() => errorText = 'Name contains invalid characters');
       return;
     }
 
@@ -56,21 +57,15 @@ class _RenameState extends State<Rename> {
     });
 
     try {
-      context.read<Dirmanager>().Rename(widget.path.parent, widget.name, name);
-      print(
-        "${widget.path.parent.path}/${widget.name} to ${widget.path.parent.path}/${name}",
-      );
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      await context.read<Dirmanager>().rename(
+            FileOperations.parentDirectory(widget.entity.path),
+            widget.name,
+            name,
+          );
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       setState(() {
         errorText = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
-
-    if (mounted) {
-      setState(() {
         isLoading = false;
       });
     }
@@ -79,7 +74,7 @@ class _RenameState extends State<Rename> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF232327),
+      backgroundColor: AppTheme.dialog,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 420,
@@ -87,12 +82,11 @@ class _RenameState extends State<Rename> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            /// Header
             Row(
               children: [
                 const Expanded(
                   child: Text(
-                    "Rename",
+                    'Rename',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -100,62 +94,51 @@ class _RenameState extends State<Rename> {
                     ),
                   ),
                 ),
-
                 IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close, color: Colors.grey),
                 ),
               ],
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               controller: controller,
               autofocus: true,
               style: const TextStyle(color: Colors.white),
-              onSubmitted: (_) => createFolder(),
+              onSubmitted: (_) => submit(),
               decoration: InputDecoration(
-                hintText: "Name",
+                hintText: 'Name',
                 hintStyle: const TextStyle(color: Colors.grey),
                 errorText: errorText,
                 filled: true,
-                fillColor: const Color(0xFF121214),
-
+                fillColor: AppTheme.inputFill,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(color: Colors.grey.shade700),
                 ),
-
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.blue),
+                  borderSide: const BorderSide(color: AppTheme.accent),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            Center(
-              child: SizedBox(
-                width: 150,
-                height: 42,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : createFolder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text("Rename"),
+            SizedBox(
+              width: 150,
+              height: 42,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                  foregroundColor: Colors.white,
                 ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Rename'),
               ),
             ),
           ],

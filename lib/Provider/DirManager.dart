@@ -1,189 +1,391 @@
+import 'package:disklens/Service/FavoritesService.dart';
+import 'package:disklens/Service/FileOperations.dart';
+import 'package:disklens/Service/StorageService.dart';
+import 'package:disklens/Service/TrashService.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+
+enum ClipboardOp { copy, cut }
+
+enum AppView { home, favorites, trash, browse }
 
 class Dirmanager extends ChangeNotifier {
   final home = Platform.environment['HOME'];
   late Directory homeDir = Directory(home!);
-  late Directory Downloads = Directory("${home!}/Downloads");
-  late Directory Documents = Directory("${home!}/Documents");
-  late Directory Pictures = Directory("${home!}/Pictures");
+  late Directory downloads = Directory("${home!}/Downloads");
+  late Directory documents = Directory("${home!}/Documents");
+  late Directory pictures = Directory("${home!}/Pictures");
+  late Directory trashDir = Directory("${home!}/.local/share/Trash/files");
+
+  AppView currentView = AppView.home;
   Directory parent = Directory("");
-  List<FileSystemEntity> AllEntities = [];
-  List<FileSystemEntity> NonHiddenEntities = [];
-  List<FileSystemEntity> Entities = [];
-  List<FileSystemEntity> Home_D_Entities = [];
-  List<FileSystemEntity> recycleBin = [];
-  Directory Current_path = Directory("");
-  Directory selected_path = Directory("");
-  bool Is_Grid = true;
+  List<FileSystemEntity> entities = [];
+  Directory selectedPath = Directory("");
+
+  FileSystemEntity? selectedEntity;
+  List<FileSystemEntity> clipboard = [];
+  ClipboardOp? clipboardOp;
+
+  List<String> favoritePaths = [];
+  List<TrashItem> trashItems = [];
+
+  bool isGrid = true;
   bool showHidden = false;
-  List hi = [];
+  bool isLoading = false;
+  bool isStorageLoading = false;
+  String? lastError;
+  String? lastMessage;
 
-  // void showHiddenFiles(bool value) {
-  //   showHidden = value;
+  StorageStats storageStats = StorageStats.empty;
 
-  //   if (showHidden) {
-  //     Entities = List<FileSystemEntity>.from(AllEntities);
-  //   } else {
-  //     Entities = List<FileSystemEntity>.from(NonHiddenEntities);
-  //   }
+  bool get isAtHome => currentView == AppView.home && parent.path == homeDir.path;
+  bool get hasClipboard => clipboard.isNotEmpty && clipboardOp != null;
 
-  //   notifyListeners();
-  // }
-  void showHiddenFiles(bool value) {
-    showHidden = value;
-    AllEntities = parent.listSync(followLinks: false);
-    Entities = showHidden
-        ? List<FileSystemEntity>.from(AllEntities)
-        : AllEntities.where((entity) {
-            return !entity.path.split('/').last.startsWith('.');
-          }).toList();
-
-    notifyListeners();
-  }
+  bool isFavorite(String path) => favoritePaths.contains(path);
 
   void toggle() {
-    Is_Grid = !Is_Grid;
-
+    isGrid = !isGrid;
     notifyListeners();
   }
 
-  void Go_To_Dashboard() {
+  void selectEntity(FileSystemEntity? entity) {
+    selectedEntity = entity;
+    if (entity is Directory) {
+      selectedPath = entity;
+    }
+    notifyListeners();
+  }
+
+  void clearFeedback() {
+    lastError = null;
+    lastMessage = null;
+  }
+
+  void setError(String message) {
+    lastError = message;
+    lastMessage = null;
+    notifyListeners();
+  }
+
+  List<FileSystemEntity> _applyHiddenFilter(List<FileSystemEntity> list) {
+    if (showHidden) return list;
+    return list
+        .where((e) => !FileOperations.basename(e.path).startsWith('.'))
+        .toList();
+  }
+
+  Map<String, FileSystemEntity> trimPath(List<FileSystemEntity> list) {
+    final result = <String, FileSystemEntity>{};
+    for (final entity in list) {
+      result[FileOperations.basename(entity.path)] = entity;
+    }
+    return result;
+  }
+
+  Future<void> refreshCurrentDirectory() async {
+    if (currentView == AppView.favorites || currentView == AppView.trash) return;
+    if (!parent.existsSync()) return;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final listed = await parent.list(followLinks: false).toList();
+      entities = _applyHiddenFilter(listed);
+    } catch (e) {
+      lastError = e.toString();
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> goToDashboard() async {
+    currentView = AppView.home;
     parent = homeDir;
-    print(parent);
-    Entities = homeDir.listSync(followLinks: false);
+    selectedEntity = null;
+    await refreshCurrentDirectory();
+    await loadStorageStats();
+  }
+
+  Future<void> openFavorites() async {
+    currentView = AppView.favorites;
+    selectedEntity = null;
+    await loadFavorites();
     notifyListeners();
   }
 
-  void update_selected_path(dynamic path) {
-    selected_path = path;
+  Future<void> openTrash() async {
+    currentView = AppView.trash;
+    selectedEntity = null;
+    await loadTrash();
     notifyListeners();
   }
 
-  // Get list of directories in a given path
-  void Get_Home_D_Entities(Directory Home_dir) {
-    if (Home_dir.existsSync()) {
-      Home_D_Entities = Home_dir.listSync(followLinks: false);
-      Current_path = Home_dir;
-      parent = Home_dir;
-      Entities = Home_D_Entities;
+  Future<void> navigateTo(Directory dirPath) async {
+    if (!dirPath.existsSync()) return;
+    currentView = AppView.browse;
+    parent = dirPath;
+    selectedEntity = null;
+    await refreshCurrentDirectory();
+    if (dirPath.path == homeDir.path) {
+      currentView = AppView.home;
+      await loadStorageStats();
     }
   }
 
-  // Navigating to directory
-  void navigate_to(Directory Dir_Path) {
-    List<FileSystemEntity> Nav_Entities = [];
-    if (Dir_Path.existsSync()) {
-      Nav_Entities = Dir_Path.listSync(followLinks: false);
-      Entities.clear();
-      parent = Dir_Path;
-      Entities = Nav_Entities;
+  void showHiddenFiles(bool value) {
+    showHidden = value;
+    refreshCurrentDirectory();
+  }
+
+  Future<void> initHome(Directory homeDirectory) async {
+    parent = homeDirectory;
+    currentView = AppView.home;
+    showHidden = false;
+    await loadFavorites();
+    await refreshCurrentDirectory();
+    await loadStorageStats();
+  }
+
+  Future<void> loadFavorites() async {
+    favoritePaths = await FavoritesService.load();
+    notifyListeners();
+  }
+
+  Future<void> addFavorite(String path) async {
+    if (favoritePaths.contains(path)) {
+      lastMessage = 'Already in favorites';
       notifyListeners();
+      return;
     }
+    favoritePaths = [...favoritePaths, path];
+    await FavoritesService.save(favoritePaths);
+    lastMessage = 'Added to favorites';
+    lastError = null;
+    notifyListeners();
   }
 
-  // Trim the path to get only the directory or file names
-  Map TrimPath(List<FileSystemEntity> entities) {
-    String Trimed_name = '';
-    Map<String, FileSystemEntity> T_F_Entities = {};
-    if (entities.isNotEmpty) {
-      for (var entity in entities) {
-        Trimed_name = entity.path.split('/').last;
-        T_F_Entities.addAll({Trimed_name: entity});
-      }
-      return T_F_Entities;
-    } else {
-      return {};
-    }
+  Future<void> removeFavorite(String path) async {
+    favoritePaths = favoritePaths.where((p) => p != path).toList();
+    await FavoritesService.save(favoritePaths);
+    lastMessage = 'Removed from favorites';
+    lastError = null;
+    notifyListeners();
   }
 
-  void Get_size(Directory Home_dir) {
-    hi = Home_dir.listSync();
+  Future<void> loadTrash() async {
+    isLoading = true;
+    notifyListeners();
+    trashItems = await TrashService.listItems();
+    isLoading = false;
+    notifyListeners();
   }
 
-  void Create(Directory path, String name) {
+  Future<void> restoreFromTrash(TrashItem item) async {
+    isLoading = true;
+    notifyListeners();
     try {
-      final folderPath = "${path.path}/$name";
-
-      final newFolder = Directory(folderPath);
-
-      if (newFolder.existsSync()) {
-        throw Exception("Folder already exists");
-      }
-
-      newFolder.createSync();
-
-      if (showHidden || !name.startsWith('.')) {
-        Entities.add(newFolder);
-      }
-
-      notifyListeners();
+      await TrashService.restore(item);
+      lastMessage = 'Restored ${item.name}';
+      lastError = null;
+      await loadTrash();
     } catch (e) {
-      rethrow;
+      lastError = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  void Rename(Directory parentPath, String oldName, String newName) {
+  Future<void> deleteForever(TrashItem item) async {
+    isLoading = true;
+    notifyListeners();
     try {
-      final oldPath = "${parentPath.path}/$oldName";
-      final newPath = "${parentPath.path}/$newName";
-
-      // check if target already exists
-      if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
-        throw Exception("Name already exists");
-      }
-
-      // rename (works for both file + folder)
-      FileSystemEntity entity = File(oldPath);
-
-      if (!entity.existsSync()) {
-        entity = Directory(oldPath);
-      }
-
-      entity.renameSync(newPath);
-
-      // update UI list
-      final index = Entities.indexWhere((e) => e.path == oldPath);
-
-      if (index != -1) {
-        Entities[index] =
-            FileSystemEntity.typeSync(newPath) == FileSystemEntityType.directory
-            ? Directory(newPath)
-            : File(newPath);
-      }
-
-      notifyListeners();
+      await TrashService.deletePermanently(item);
+      lastMessage = 'Permanently deleted ${item.name}';
+      lastError = null;
+      await loadTrash();
     } catch (e) {
-      rethrow;
+      lastError = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  void Delete(FileSystemEntity entity) {
+  Future<void> emptyTrash() async {
+    isLoading = true;
+    notifyListeners();
     try {
-      // remove from current view
-      Entities.removeWhere((e) => e.path == entity.path);
-
-      // add to recycle bin
-      recycleBin.add(entity);
-
-      notifyListeners();
+      await TrashService.emptyTrash();
+      lastMessage = 'Trash emptied';
+      lastError = null;
+      await loadTrash();
     } catch (e) {
-      rethrow;
+      lastError = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  void Restore(FileSystemEntity entity) {
-    try {
-      recycleBin.removeWhere((e) => e.path == entity.path);
+  Future<void> loadStorageStats() async {
+    isStorageLoading = true;
+    notifyListeners();
 
-      // only restore if still inside current directory view
-      if (entity.path.startsWith(parent.path)) {
-        Entities.add(entity);
+    try {
+      final disk = await StorageService.getDiskStats(homeDir.path);
+      storageStats = disk;
+      notifyListeners();
+
+      final categories = await StorageService.scanDynamicCategories(
+        homeDir,
+        topN: 4,
+      );
+      storageStats = StorageStats(
+        totalBytes: disk.totalBytes,
+        usedBytes: disk.usedBytes,
+        freeBytes: disk.freeBytes,
+        topCategories: categories,
+      );
+    } catch (e) {
+      lastError = 'Storage scan failed: $e';
+    }
+
+    isStorageLoading = false;
+    notifyListeners();
+  }
+
+  void copySelection() {
+    if (selectedEntity == null) {
+      lastError = 'Nothing selected';
+      notifyListeners();
+      return;
+    }
+    clipboard = [selectedEntity!];
+    clipboardOp = ClipboardOp.copy;
+    lastMessage = 'Copied ${FileOperations.basename(selectedEntity!.path)}';
+    lastError = null;
+    notifyListeners();
+  }
+
+  void cutSelection() {
+    if (selectedEntity == null) {
+      lastError = 'Nothing selected';
+      notifyListeners();
+      return;
+    }
+    clipboard = [selectedEntity!];
+    clipboardOp = ClipboardOp.cut;
+    lastMessage = 'Cut ${FileOperations.basename(selectedEntity!.path)}';
+    lastError = null;
+    notifyListeners();
+  }
+
+  Future<void> pasteInto(Directory destDir) async {
+    if (!hasClipboard) {
+      lastError = 'Clipboard is empty';
+      notifyListeners();
+      return;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      for (final item in clipboard) {
+        if (!item.existsSync()) {
+          throw Exception('Source no longer exists');
+        }
+        if (clipboardOp == ClipboardOp.copy) {
+          await FileOperations.copyEntity(item, destDir);
+        } else {
+          await FileOperations.moveEntity(item, destDir);
+        }
       }
 
-      notifyListeners();
+      if (clipboardOp == ClipboardOp.cut) {
+        clipboard = [];
+        clipboardOp = null;
+        selectedEntity = null;
+      }
+
+      lastMessage = 'Pasted successfully';
+      lastError = null;
+      if (currentView == AppView.trash) {
+        await loadTrash();
+      } else {
+        await refreshCurrentDirectory();
+      }
     } catch (e) {
-      rethrow;
+      lastError = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
     }
   }
+
+  Future<void> deleteSelection() async {
+    if (selectedEntity == null) {
+      lastError = 'Nothing selected';
+      notifyListeners();
+      return;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      await FileOperations.moveToTrash(selectedEntity!);
+      selectedEntity = null;
+      lastMessage = 'Moved to Trash';
+      lastError = null;
+      await refreshCurrentDirectory();
+    } catch (e) {
+      lastError = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> create(Directory path, String name) async {
+    final folderPath = '${path.path}/$name';
+    final newFolder = Directory(folderPath);
+
+    if (newFolder.existsSync()) {
+      throw Exception('Folder already exists');
+    }
+
+    await newFolder.create(recursive: true);
+    lastMessage = 'Folder created';
+    lastError = null;
+    await refreshCurrentDirectory();
+  }
+
+  Future<void> rename(Directory parentPath, String oldName, String newName) async {
+    final oldPath = '${parentPath.path}/$oldName';
+    final newPath = '${parentPath.path}/$newName';
+
+    if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
+      throw Exception('Name already exists');
+    }
+
+    FileSystemEntity entity = File(oldPath);
+    if (!entity.existsSync()) {
+      entity = Directory(oldPath);
+    }
+
+    await entity.rename(newPath);
+    selectedEntity = FileSystemEntity.typeSync(newPath) ==
+            FileSystemEntityType.directory
+        ? Directory(newPath)
+        : File(newPath);
+    lastMessage = 'Renamed successfully';
+    lastError = null;
+    await refreshCurrentDirectory();
+  }
+
+  Directory pasteTarget({FileSystemEntity? clicked}) {
+    if (clicked is Directory) return clicked;
+    return parent;
+  }
+
+  Directory newFolderTarget() => parent;
 }

@@ -1,47 +1,44 @@
+import 'package:disklens/Theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-class StorageOverviewSize extends StatefulWidget {
-  final type;
-  final size;
+class StorageOverviewSize extends StatelessWidget {
+  final String type;
+  final double sizeGb;
   final Color colour;
   const StorageOverviewSize({
     super.key,
     required this.type,
-    required this.size,
+    required this.sizeGb,
     required this.colour,
   });
 
   @override
-  State<StorageOverviewSize> createState() => _StorageOverviewSizeState();
-}
-
-class _StorageOverviewSizeState extends State<StorageOverviewSize> {
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF1F2022),
+        color: AppTheme.cardSecondary,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          spacing: 10,
           children: [
-            VerticalDivider(
-              color: widget.colour,
-              thickness: 5,
-
-              radius: BorderRadius.circular(10),
+            Container(
+              width: 4,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colour,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.type, style: TextStyle(color: Colors.grey)),
+                Text(type, style: const TextStyle(color: Colors.grey)),
                 Text(
-                  "${widget.size.toString()}GB",
-                  style: TextStyle(fontSize: 19),
+                  '${sizeGb.toStringAsFixed(1)} GB',
+                  style: const TextStyle(fontSize: 19, color: Colors.white),
                 ),
               ],
             ),

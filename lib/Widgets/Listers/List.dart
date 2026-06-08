@@ -1,66 +1,83 @@
 import 'dart:io';
 
 import 'package:disklens/Provider/DirManager.dart';
+import 'package:disklens/Widgets/FileContextMenu.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class lis extends StatefulWidget {
-  final List<FileSystemEntity> Entities;
+class FileList extends StatelessWidget {
+  final List<FileSystemEntity> entities;
 
-  const lis({super.key, required this.Entities});
+  const FileList({super.key, required this.entities});
 
-  @override
-  State<lis> createState() => _lisState();
-}
-
-class _lisState extends State<lis> {
   @override
   Widget build(BuildContext context) {
-    Map Trimed_Entities = Dirmanager().TrimPath(widget.Entities);
-    final entries = Trimed_Entities.entries.toList();
-
     return Consumer<Dirmanager>(
-      builder: (context, Dirmanager, child) {
-        return ListView.builder(
-          itemCount: entries.length,
-          itemBuilder: (BuildContext context, int index) {
-            return Material(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    Dirmanager.Current_path = entries[index].value;
-                    print(Dirmanager.Current_path);
-                    Dirmanager.update_selected_path(Dirmanager.Current_path);
-                  });
-                },
-                onDoubleTap: () {
-                  Dirmanager.navigate_to(entries[index].value);
+      builder: (context, manager, child) {
+        final entries = manager.trimPath(entities).entries.toList();
 
-                  print(
-                    "Trimed ${entries[index].key} the path: ${entries[index].value} Type of path: ${entries[index].value.runtimeType}",
-                  );
-
-                  Dirmanager.parent = entries[index].value;
-                },
-
-                // splashColor: Colors.grey[10],
-                // hoverColor: const Color.fromARGB(255, 70, 69, 69),
-                child: ListTile(
-                  tileColor:
-                      Dirmanager.Current_path.path == entries[index].value.path
-                      ? Colors.grey[800]
-                      : Color(0xFF0B0C0D),
-                  selected:
-                      Dirmanager.Current_path == entries[index].value.path,
-                  leading: entries[index].value is Directory
-                      ? Icon(Icons.folder, color: Colors.blue)
-                      : Icon(Icons.feed_outlined, color: Colors.grey),
-                  title: Text(entries[index].key),
-                  trailing: Text(entries[index].value.toString()),
-                ),
-              ),
+        return GestureDetector(
+          onSecondaryTapUp: (details) {
+            FileContextMenu.show(
+              context: context,
+              position: details.globalPosition,
+              backgroundMenu: true,
             );
           },
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: entries.length,
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              final entity = entry.value;
+              final isSelected = manager.selectedEntity?.path == entity.path;
+
+              return GestureDetector(
+                onSecondaryTapUp: (details) {
+                  FileContextMenu.show(
+                    context: context,
+                    position: details.globalPosition,
+                    target: entity,
+                  );
+                },
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => manager.selectEntity(entity),
+                    onDoubleTap: () {
+                      if (entity is Directory) {
+                        manager.navigateTo(entity);
+                      }
+                    },
+                    child: ListTile(
+                      dense: true,
+                      tileColor: Colors.transparent,
+                      selected: isSelected,
+                      selectedTileColor: Colors.grey[800],
+                      leading: Icon(
+                        entity is Directory
+                            ? Icons.folder_outlined
+                            : Icons.insert_drive_file_outlined,
+                        color: entity is Directory
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      title: Text(
+                        entry.key,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      subtitle: Text(
+                        entity.path,
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );
