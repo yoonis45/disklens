@@ -26,4 +26,6 @@ class service {
   void showHidden_Files(context) async {
     Provider.of<Dirmanager>(context, listen: false).showHiddenFiles(false);
   }
+
+  void Create_Directory(Directory Path) {}
 }

@@ -12,10 +12,12 @@ class Dirmanager extends ChangeNotifier {
   List<FileSystemEntity> NonHiddenEntities = [];
   List<FileSystemEntity> Entities = [];
   List<FileSystemEntity> Home_D_Entities = [];
+  List<FileSystemEntity> recycleBin = [];
   Directory Current_path = Directory("");
   Directory selected_path = Directory("");
   bool Is_Grid = true;
   bool showHidden = false;
+  List hi = [];
 
   // void showHiddenFiles(bool value) {
   //   showHidden = value;
@@ -92,6 +94,96 @@ class Dirmanager extends ChangeNotifier {
       return T_F_Entities;
     } else {
       return {};
+    }
+  }
+
+  void Get_size(Directory Home_dir) {
+    hi = Home_dir.listSync();
+  }
+
+  void Create(Directory path, String name) {
+    try {
+      final folderPath = "${path.path}/$name";
+
+      final newFolder = Directory(folderPath);
+
+      if (newFolder.existsSync()) {
+        throw Exception("Folder already exists");
+      }
+
+      newFolder.createSync();
+
+      if (showHidden || !name.startsWith('.')) {
+        Entities.add(newFolder);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  void Rename(Directory parentPath, String oldName, String newName) {
+    try {
+      final oldPath = "${parentPath.path}/$oldName";
+      final newPath = "${parentPath.path}/$newName";
+
+      // check if target already exists
+      if (FileSystemEntity.typeSync(newPath) != FileSystemEntityType.notFound) {
+        throw Exception("Name already exists");
+      }
+
+      // rename (works for both file + folder)
+      FileSystemEntity entity = File(oldPath);
+
+      if (!entity.existsSync()) {
+        entity = Directory(oldPath);
+      }
+
+      entity.renameSync(newPath);
+
+      // update UI list
+      final index = Entities.indexWhere((e) => e.path == oldPath);
+
+      if (index != -1) {
+        Entities[index] =
+            FileSystemEntity.typeSync(newPath) == FileSystemEntityType.directory
+            ? Directory(newPath)
+            : File(newPath);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  void Delete(FileSystemEntity entity) {
+    try {
+      // remove from current view
+      Entities.removeWhere((e) => e.path == entity.path);
+
+      // add to recycle bin
+      recycleBin.add(entity);
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  void Restore(FileSystemEntity entity) {
+    try {
+      recycleBin.removeWhere((e) => e.path == entity.path);
+
+      // only restore if still inside current directory view
+      if (entity.path.startsWith(parent.path)) {
+        Entities.add(entity);
+      }
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 }

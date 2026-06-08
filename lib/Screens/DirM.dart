@@ -351,7 +351,7 @@ class _DirmState extends State<Dirm> {
                                   onChanged: (value) {
                                     setState(() {
                                       Dirmanager.showHidden = value!;
-                                      Dirmanager.showHiddenFiles(value!);
+                                      Dirmanager.showHiddenFiles(value);
                                     });
                                   },
                                   child: const Text('Show Hidden Files'),
