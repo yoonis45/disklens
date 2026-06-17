@@ -26,8 +26,8 @@ class _DirmState extends State<Dirm> {
   late final Directory pictures;
   late final TextEditingController pathController;
   late final FocusNode _fileFocusNode;
+  Dirmanager? _manager;
   String selectedRadio = 'name';
-  String? _lastSnack;
 
   final sidebarButtonStyle = ElevatedButton.styleFrom(
     foregroundColor: const Color(0xFF2B2C2E),
@@ -49,31 +49,65 @@ class _DirmState extends State<Dirm> {
     _fileFocusNode = FocusNode();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<Dirmanager>().initHome(homeDir);
+      _manager = context.read<Dirmanager>();
+      _manager!.addListener(_onManagerChanged);
+      _manager!.initHome(homeDir);
       _fileFocusNode.requestFocus();
     });
   }
 
   @override
   void dispose() {
+    _manager?.removeListener(_onManagerChanged);
     pathController.dispose();
     _fileFocusNode.dispose();
     super.dispose();
   }
 
-  void _showFeedback(Dirmanager manager) {
-    final message = manager.lastError ?? manager.lastMessage;
-    if (message == null || message == _lastSnack) return;
-    _lastSnack = message;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor:
-            manager.lastError != null ? Colors.red.shade800 : Colors.grey.shade800,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    manager.clearFeedback();
+  void _onManagerChanged() {
+    if (!mounted || _manager == null) return;
+    final message = _manager!.lastError ?? _manager!.lastMessage;
+    if (message == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _manager == null) return;
+      final msg = _manager!.lastError ?? _manager!.lastMessage;
+      if (msg == null) return;
+
+      const snackWidth = 220.0;
+      final screenWidth = MediaQuery.sizeOf(context).width;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: SizedBox(
+            width: snackWidth,
+            child: Text(
+              msg,
+              style: TextStyle(
+                color: Colors.grey.shade400,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          backgroundColor: AppTheme.background,
+          behavior: SnackBarBehavior.floating,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          margin: EdgeInsets.only(
+            left: screenWidth - snackWidth - 32,
+            right: 16,
+            bottom: 16,
+          ),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+            side: BorderSide(color: Colors.grey.shade800),
+          ),
+          duration: const Duration(milliseconds: 1500),
+        ),
+      );
+      _manager!.clearFeedback();
+    });
   }
 
   void _goBack(Dirmanager manager) {
@@ -140,10 +174,6 @@ class _DirmState extends State<Dirm> {
             pathController.text != manager.parent.path) {
           pathController.text = manager.parent.path;
         }
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showFeedback(manager);
-        });
 
         return Scaffold(
           backgroundColor: AppTheme.background,

@@ -234,24 +234,25 @@ class Dirmanager extends ChangeNotifier {
     try {
       final disk = await StorageService.getDiskStats(homeDir.path);
       storageStats = disk;
+      isStorageLoading = false;
       notifyListeners();
 
-      final categories = await StorageService.scanDynamicCategories(
+      final homeBytes = await StorageService.getHomeTotalBytes(homeDir);
+      storageStats = storageStats.copyWith(homeBytes: homeBytes);
+      notifyListeners();
+
+      await StorageService.scanHomeCategories(
         homeDir,
-        topN: 4,
-      );
-      storageStats = StorageStats(
-        totalBytes: disk.totalBytes,
-        usedBytes: disk.usedBytes,
-        freeBytes: disk.freeBytes,
-        topCategories: categories,
+        onProgress: (categories) {
+          storageStats = storageStats.copyWith(topCategories: categories);
+          notifyListeners();
+        },
       );
     } catch (e) {
       lastError = 'Storage scan failed: $e';
+      isStorageLoading = false;
+      notifyListeners();
     }
-
-    isStorageLoading = false;
-    notifyListeners();
   }
 
   void copySelection() {

@@ -1,17 +1,34 @@
 import 'dart:io';
 
-import 'package:disklens/Service/FileOperations.dart';
 import 'package:flutter/material.dart';
 
 class StorageCategory {
   final String name;
   final int bytes;
+  final Color color;
+  final bool isScanning;
 
-  const StorageCategory({required this.name, required this.bytes});
+  const StorageCategory({
+    required this.name,
+    required this.bytes,
+    required this.color,
+    this.isScanning = false,
+  });
+
+  StorageCategory copyWith({int? bytes, bool? isScanning}) {
+    return StorageCategory(
+      name: name,
+      bytes: bytes ?? this.bytes,
+      color: color,
+      isScanning: isScanning ?? this.isScanning,
+    );
+  }
 
   double get gb => bytes / (1024 * 1024 * 1024);
 
   String get formattedSize {
+    if (isScanning) return '…';
+    if (bytes < 1024) return '0 MB';
     if (bytes < 1024 * 1024) {
       return '${(bytes / 1024).toStringAsFixed(0)} MB';
     }
@@ -26,12 +43,14 @@ class StorageStats {
   final int totalBytes;
   final int usedBytes;
   final int freeBytes;
+  final int homeBytes;
   final List<StorageCategory> topCategories;
 
   const StorageStats({
     required this.totalBytes,
     required this.usedBytes,
     required this.freeBytes,
+    this.homeBytes = 0,
     required this.topCategories,
   });
 
@@ -39,25 +58,142 @@ class StorageStats {
     totalBytes: 0,
     usedBytes: 0,
     freeBytes: 0,
+    homeBytes: 0,
     topCategories: [],
   );
 
+  StorageStats copyWith({
+    int? totalBytes,
+    int? usedBytes,
+    int? freeBytes,
+    int? homeBytes,
+    List<StorageCategory>? topCategories,
+  }) {
+    return StorageStats(
+      totalBytes: totalBytes ?? this.totalBytes,
+      usedBytes: usedBytes ?? this.usedBytes,
+      freeBytes: freeBytes ?? this.freeBytes,
+      homeBytes: homeBytes ?? this.homeBytes,
+      topCategories: topCategories ?? this.topCategories,
+    );
+  }
+
   double get usedFraction => totalBytes > 0 ? usedBytes / totalBytes : 0;
+
+  int get categorizedBytes =>
+      topCategories.fold<int>(0, (sum, c) => sum + c.bytes);
 
   double bytesToGb(int bytes) => bytes / (1024 * 1024 * 1024);
 }
 
+class _CategoryDef {
+  final String name;
+  final Color color;
+  final Set<String> folderNames;
+  final List<String> extensions;
+
+  const _CategoryDef(
+    this.name,
+    this.color,
+    this.folderNames,
+    this.extensions,
+  );
+}
+
+typedef StorageProgressCallback = void Function(List<StorageCategory> categories);
+
 class StorageService {
-  // Muted greys for a minimal look — slight variation only
-  static Color barColorAt(int index) {
-    const shades = [
-      Color(0xFFE0E0E0),
-      Color(0xFFB0B0B0),
-      Color(0xFF909090),
-      Color(0xFF707070),
-      Color(0xFF505050),
+  static const _excludeFromFileScan = [
+    '.local',
+    '.var',
+    'snap',
+    '.cache',
+    '.config',
+  ];
+
+  static const _categories = [
+    _CategoryDef('Videos', Color(0xFF4B8BF4), {
+      'Videos',
+      'Movies',
+      'Music',
+    }, [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.webm',
+      '.flv',
+      '.wmv',
+      '.m4v',
+      '.mp3',
+      '.flac',
+      '.wav',
+      '.aac',
+      '.ogg',
+    ]),
+    _CategoryDef('Images', Color(0xFF4CAF50), {
+      'Pictures',
+      'Photos',
+      'Images',
+    }, [
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.bmp',
+      '.svg',
+      '.ico',
+      '.heic',
+      '.raw',
+      '.tiff',
+    ]),
+    _CategoryDef('Docs', Color(0xFFEAB308), {
+      'Documents',
+      'Downloads',
+      'Desktop',
+      'Templates',
+      'Public',
+    }, [
+      '.pdf',
+      '.doc',
+      '.docx',
+      '.txt',
+      '.odt',
+      '.xls',
+      '.xlsx',
+      '.ppt',
+      '.pptx',
+      '.md',
+      '.rtf',
+      '.csv',
+      '.json',
+      '.xml',
+      '.html',
+      '.zip',
+      '.tar',
+      '.gz',
+      '.7z',
+      '.rar',
+    ]),
+    _CategoryDef('Apps', Color(0xFF9B59B6), {
+      '.local',
+      '.var',
+      'snap',
+      '.cache',
+    }, []),
+  ];
+
+  static List<StorageCategory> placeholderCategories() {
+    return [
+      for (final def in _categories)
+        StorageCategory(
+          name: def.name,
+          bytes: 0,
+          color: def.color,
+          isScanning: true,
+        ),
     ];
-    return shades[index.clamp(0, shades.length - 1)];
   }
 
   static Future<StorageStats> getDiskStats(String path) async {
@@ -85,72 +221,104 @@ class StorageService {
         totalBytes: int.tryParse(parts[0]) ?? 0,
         usedBytes: int.tryParse(parts[1]) ?? 0,
         freeBytes: int.tryParse(parts[2]) ?? 0,
-        topCategories: const [],
+        topCategories: placeholderCategories(),
       );
     } catch (_) {
       return StorageStats.empty;
     }
   }
 
-  /// Uses `du` on each top-level item in home — fast and accurate on Linux.
-  static Future<List<StorageCategory>> scanDynamicCategories(
-    Directory root, {
-    int topN = 4,
-  }) async {
-    final buckets = <String, int>{};
-
-    if (!root.existsSync()) return [];
-
-    await for (final entity in root.list(followLinks: false)) {
-      final name = FileOperations.basename(entity.path);
-      if (name.startsWith('.')) continue;
-
-      final bytes = await _duSize(entity.path);
-      if (bytes > 0) {
-        buckets[name] = bytes;
-      }
-    }
-
-    return _topCategories(buckets, topN: topN);
+  static Future<int> getHomeTotalBytes(Directory home) async {
+    if (!home.existsSync()) return 0;
+    return _duBytes(home.path);
   }
 
-  static Future<int> _duSize(String path) async {
+  /// Scans home by real file types and streams updates as each category finishes.
+  static Future<List<StorageCategory>> scanHomeCategories(
+    Directory home, {
+    StorageProgressCallback? onProgress,
+  }) async {
+    if (!home.existsSync()) return placeholderCategories();
+
+    final categories = placeholderCategories();
+    void emit() => onProgress?.call(categories.map((c) => c).toList());
+    emit();
+
+    final appPaths = <String>[];
+    for (final name in _categories.last.folderNames) {
+      final path = '${home.path}/$name';
+      if (Directory(path).existsSync()) appPaths.add(path);
+    }
+
+    await Future.wait(
+      List.generate(_categories.length, (index) async {
+        final def = _categories[index];
+        final bytes = def.extensions.isEmpty
+            ? await _duBytes(appPaths)
+            : await _sumExtensionsInHome(home.path, def.extensions);
+
+        categories[index] = categories[index].copyWith(
+          bytes: bytes,
+          isScanning: false,
+        );
+        emit();
+      }),
+    );
+
+    return categories;
+  }
+
+  static Future<int> _duBytes(dynamic paths) async {
+    final args = <String>['-sb'];
+    if (paths is String) {
+      args.add(paths);
+    } else if (paths is List<String>) {
+      args.addAll(paths);
+    } else {
+      return 0;
+    }
+
     try {
-      final result = await Process.run('du', ['-sb', path]);
+      final result = await Process.run('du', args);
       if (result.exitCode != 0) return 0;
 
-      final line = (result.stdout as String).trim().split('\n').first;
-      final tab = line.indexOf('\t');
-      if (tab <= 0) return 0;
-
-      return int.tryParse(line.substring(0, tab)) ?? 0;
+      var total = 0;
+      for (final line in (result.stdout as String).trim().split('\n')) {
+        if (line.isEmpty) continue;
+        final tab = line.indexOf('\t');
+        if (tab <= 0) continue;
+        total += int.tryParse(line.substring(0, tab)) ?? 0;
+      }
+      return total;
     } catch (_) {
       return 0;
     }
   }
 
-  static List<StorageCategory> _topCategories(
-    Map<String, int> buckets, {
-    required int topN,
-  }) {
-    final sorted = buckets.entries.where((e) => e.value > 0).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+  static Future<int> _sumExtensionsInHome(
+    String homePath,
+    List<String> extensions,
+  ) async {
+    if (extensions.isEmpty) return 0;
 
-    if (sorted.isEmpty) return [];
+    final escapedHome = homePath.replaceAll("'", "'\\''");
+    final extTests = extensions.map((e) => "-iname '*$e'").join(' -o ');
+    final excludeTests = _excludeFromFileScan
+        .map((d) => "-not -path '*/$d/*'")
+        .join(' ');
 
-    final top = sorted.take(topN).map((e) => StorageCategory(
-          name: e.key,
-          bytes: e.value,
-        )).toList();
+    final script =
+        "find '$escapedHome' -xdev -type f $excludeTests "
+        "\\( $extTests \\) -printf '%s\\n' 2>/dev/null "
+        "| awk '{s+=\$1} END {print s+0}'";
 
-    final otherBytes = sorted
-        .skip(topN)
-        .fold<int>(0, (sum, e) => sum + e.value);
-
-    if (otherBytes > 0) {
-      top.add(StorageCategory(name: 'Other', bytes: otherBytes));
+    try {
+      final result = await Process.run('bash', ['-c', script]);
+      if (result.exitCode != 0) return 0;
+      return int.tryParse((result.stdout as String).trim()) ?? 0;
+    } catch (_) {
+      return 0;
     }
-
-    return top;
   }
+
 }

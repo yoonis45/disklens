@@ -23,28 +23,30 @@ class Dashboard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// STORAGE PANEL
-              SizedBox(
-                height:
-                    220, // Adjusted compact height to give bottom area more breathing room
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppTheme.card,
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: manager.isStorageLoading
-                      ? const StorageLoading()
-                      : _StorageContent(
-                          usedGb: usedGb,
-                          totalGb: totalGb,
-                          stats: stats,
-                        ),
-                ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final panelHeight = constraints.maxWidth < 700 ? 260.0 : 220.0;
+                  return SizedBox(
+                    height: panelHeight,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: AppTheme.card,
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: manager.isStorageLoading
+                          ? const StorageLoading()
+                          : _StorageContent(
+                              usedGb: usedGb,
+                              totalGb: totalGb,
+                              stats: stats,
+                              compact: constraints.maxWidth < 700,
+                            ),
+                    ),
+                  );
+                },
               ),
-
               const SizedBox(height: 24),
-
               const Text(
                 'DIRECTORIES & FILES',
                 style: TextStyle(
@@ -54,9 +56,7 @@ class Dashboard extends StatelessWidget {
                   letterSpacing: 1.2,
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(4),
@@ -77,150 +77,273 @@ class _StorageContent extends StatelessWidget {
   final double usedGb;
   final double totalGb;
   final StorageStats stats;
+  final bool compact;
 
   const _StorageContent({
     required this.usedGb,
     required this.totalGb,
     required this.stats,
+    required this.compact,
   });
 
   @override
   Widget build(BuildContext context) {
     final categories = stats.topCategories;
+    final anyScanning = categories.any((c) => c.isScanning);
+    final headlineSize = compact ? 26.0 : 34.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'STORAGE OVERVIEW',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        /// BIG NUMBER
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '${usedGb.toStringAsFixed(1)} GB ',
-                style: const TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+        Row(
+          children: [
+            const Text(
+              'STORAGE OVERVIEW',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
-              TextSpan(
-                text: 'of ${totalGb.toStringAsFixed(0)} GB Used',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey.shade400,
-                  fontWeight: FontWeight.w500,
+            ),
+            if (anyScanning) ...[
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: Colors.grey.shade600,
                 ),
               ),
             ],
-          ),
+          ],
         ),
-
-        const SizedBox(height: 18),
-
-        /// MAIN MULTI-COLOR PROGRESS BAR FALLBACK
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: stats.usedFraction,
-            minHeight: 8,
-            backgroundColor: const Color(0xFF222225),
-            color: Colors.blueAccent,
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        /// HORIZONTAL EXPANDING BREAKDOWN CARDS
-        Expanded(
-          child: categories.isNotEmpty
-              ? Row(
-                  children: List.generate(categories.length, (i) {
-                    final cat = categories[i];
-
-                    return Expanded(
-                      child: Container(
-                        margin: EdgeInsets.only(
-                          right: i == categories.length - 1 ? 0 : 12,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF131316),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            /// VERTICAL COLORED INDICATOR BAR
-                            Container(
-                              width: 4,
-                              height:
-                                  32, // Stretched tall to look exactly like the mockup
-                              decoration: BoxDecoration(
-                                color: StorageService.barColorAt(i),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            /// TEXT CONTENT (NAME ABOVE, SIZE BELOW)
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    cat.name.toUpperCase(),
-                                    style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.6,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    cat.formattedSize,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                )
-              : Center(
-                  child: Text(
-                    'Could not read folder sizes',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+        const SizedBox(height: 10),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '${usedGb.toStringAsFixed(1)} GB ',
+                  style: TextStyle(
+                    fontSize: headlineSize,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
+                TextSpan(
+                  text: 'of ${totalGb.toStringAsFixed(0)} GB Used',
+                  style: TextStyle(
+                    fontSize: compact ? 13 : 15,
+                    color: Colors.grey.shade400,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        _SegmentedStorageBar(stats: stats),
+        const SizedBox(height: 20),
+        Expanded(
+          child: compact
+              ? _CategoryGrid(categories: categories)
+              : _CategoryRow(categories: categories),
         ),
       ],
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  final List<StorageCategory> categories;
+
+  const _CategoryRow({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(categories.length, (i) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: i == categories.length - 1 ? 0 : 12),
+            child: _CategoryCard(categories[i]),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  final List<StorageCategory> categories;
+
+  const _CategoryGrid({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 2.8,
+      physics: const NeverScrollableScrollPhysics(),
+      children: categories.map((c) => _CategoryCard(c)).toList(),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final StorageCategory category;
+
+  const _CategoryCard(this.category);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131316),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 4,
+            height: 32,
+            decoration: BoxDecoration(
+              color: category.isScanning
+                  ? Colors.grey.shade700
+                  : category.color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  category.name.toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.6,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: Text(
+                    category.formattedSize,
+                    key: ValueKey('${category.name}-${category.bytes}-${category.isScanning}'),
+                    style: TextStyle(
+                      color: category.isScanning
+                          ? Colors.grey.shade600
+                          : Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SegmentedStorageBar extends StatelessWidget {
+  final StorageStats stats;
+
+  const _SegmentedStorageBar({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = stats.totalBytes;
+    if (total <= 0) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: const SizedBox(
+          height: 10,
+          child: ColoredBox(color: Color(0xFF222225)),
+        ),
+      );
+    }
+
+    int flexFor(int bytes) =>
+        ((bytes / total) * 1000).round().clamp(bytes > 0 ? 1 : 0, 1000);
+
+    final segments = <Widget>[];
+
+    for (final cat in stats.topCategories) {
+      if (cat.isScanning || cat.bytes <= 0) continue;
+      segments.add(
+        Expanded(
+          flex: flexFor(cat.bytes),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            color: cat.color,
+          ),
+        ),
+      );
+    }
+
+    final categorized = stats.categorizedBytes;
+    final otherHome = (stats.homeBytes - categorized).clamp(0, stats.homeBytes);
+    final otherUsed = (stats.usedBytes - stats.homeBytes).clamp(0, stats.usedBytes);
+    final unbucketedHome = otherHome;
+
+    for (final bytes in [unbucketedHome, otherUsed]) {
+      final flex = flexFor(bytes);
+      if (flex > 0) {
+        segments.add(
+          Expanded(
+            flex: flex,
+            child: const ColoredBox(color: Color(0xFF555558)),
+          ),
+        );
+      }
+    }
+
+    final freeFlex = flexFor(stats.freeBytes);
+    if (freeFlex > 0) {
+      segments.add(
+        Expanded(
+          flex: freeFlex,
+          child: const ColoredBox(color: Color(0xFF222225)),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+        builder: (context, value, child) {
+          return SizedBox(
+            height: 10,
+            child: Opacity(opacity: value, child: child),
+          );
+        },
+        child: Row(children: segments),
+      ),
     );
   }
 }

@@ -29,7 +29,7 @@ class StorageLoading extends StatelessWidget {
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
-                    'Scanning home folder…',
+                    'Scanning storage…',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -43,7 +43,7 @@ class StorageLoading extends StatelessWidget {
             if (constraints.maxHeight > 130) ...[
               const SizedBox(height: 14),
               Text(
-                'Home folder breakdown',
+                'Storage breakdown',
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
               ),
               const SizedBox(height: 8),
